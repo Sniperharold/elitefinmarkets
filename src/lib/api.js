@@ -109,10 +109,10 @@ export const api = {
   adminGetChannels: () => request("/admin/channels"),
   adminSetChannel: (body) =>
     request("/admin/channels", { method: "POST", body: JSON.stringify(body) }),
-  adminAdjustWallet: (userId, balance, cryptoBalance, note) =>
-    request(`/admin/users/${userId}/wallet`, {
+  adminAdjustWallet: (userId, balance, cryptoBalance, note, date) =>
+    request(`/admin/users/${userId}/wallet-dated`, {
       method: "PATCH",
-      body: JSON.stringify({ balance, cryptoBalance, note }),
+      body: JSON.stringify({ balance, cryptoBalance, note, ...(date ? { date } : {}) }),
     }),
   adminGetCreditCards: (userId) => {
     const q = userId ? `?userId=${userId}` : "";

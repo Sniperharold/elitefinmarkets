@@ -334,12 +334,24 @@ export default function AdminPage() {
       edits.cryptoBalance !== undefined
         ? parseFloat(edits.cryptoBalance)
         : undefined;
+
+    let date;
+    if (edits.txDay && edits.txMonth && edits.txYear) {
+      date = new Date(
+        parseInt(edits.txYear),
+        parseInt(edits.txMonth) - 1,
+        parseInt(edits.txDay),
+        12, 0, 0,
+      ).toISOString();
+    }
+
     try {
       await api.adminAdjustWallet(
         userId,
         balance,
         cryptoBalance,
         edits.note || "Admin adjustment",
+        date,
       );
       showToast("✅ Wallet updated.");
       loadUsers();
@@ -761,6 +773,57 @@ export default function AdminPage() {
                           marginBottom: "8px",
                         }}
                       />
+
+                      {/* Transaction date */}
+                      <div style={{ marginBottom: "8px" }}>
+                        <label style={{ display: "block", fontSize: "10px", color: "rgba(148,163,184,0.5)", marginBottom: "5px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                          Transaction Date (optional)
+                        </label>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr 1fr", gap: "6px" }}>
+                          <input
+                            type="number"
+                            placeholder="Day"
+                            min={1} max={31}
+                            value={we.txDay ?? ""}
+                            onChange={(e) =>
+                              setWalletEdits((prev) => ({
+                                ...prev,
+                                [u.id]: { ...(prev[u.id] || {}), txDay: e.target.value },
+                              }))
+                            }
+                            style={{ background: "rgba(10,18,40,0.7)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "8px 10px", color: "#E2E8F0", fontSize: "13px", outline: "none", boxSizing: "border-box", width: "100%" }}
+                          />
+                          <select
+                            value={we.txMonth ?? ""}
+                            onChange={(e) =>
+                              setWalletEdits((prev) => ({
+                                ...prev,
+                                [u.id]: { ...(prev[u.id] || {}), txMonth: e.target.value },
+                              }))
+                            }
+                            style={{ background: "rgba(10,18,40,0.7)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "8px 6px", color: we.txMonth ? "#E2E8F0" : "rgba(148,163,184,0.45)", fontSize: "12px", outline: "none", boxSizing: "border-box", width: "100%" }}
+                          >
+                            <option value="">Month</option>
+                            {["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"].map((m, i) => (
+                              <option key={i} value={i + 1} style={{ color: "#E2E8F0", background: "#0D1629" }}>{m}</option>
+                            ))}
+                          </select>
+                          <input
+                            type="number"
+                            placeholder="Year"
+                            min={2000} max={2099}
+                            value={we.txYear ?? ""}
+                            onChange={(e) =>
+                              setWalletEdits((prev) => ({
+                                ...prev,
+                                [u.id]: { ...(prev[u.id] || {}), txYear: e.target.value },
+                              }))
+                            }
+                            style={{ background: "rgba(10,18,40,0.7)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "8px 10px", color: "#E2E8F0", fontSize: "13px", outline: "none", boxSizing: "border-box", width: "100%" }}
+                          />
+                        </div>
+                      </div>
+
                       <button
                         onClick={() => handleAdjustWallet(u.id)}
                         style={{
