@@ -1,4 +1,3 @@
-// src/lib/AuthContext.jsx
 import {
   createContext,
   useContext,
@@ -21,6 +20,7 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [tokenExpired, setTokenExpired] = useState(false);
   const [inactiveLogout, setInactiveLogout] = useState(false);
+  const [sessionTimeout, setSessionTimeout] = useState(false);
 
   const navigate = useNavigate();
   const inactivityTimer = useRef(null);
@@ -47,6 +47,16 @@ export function AuthProvider({ children }) {
     if (inactivityTimer.current) clearTimeout(inactivityTimer.current);
     inactivityTimer.current = setTimeout(handleInactivity, INACTIVITY_MS);
   }, [handleInactivity]);
+
+  useEffect(() => {
+    const handle401 = () => {
+      clearSession();
+      setSessionTimeout(true);
+      navigate("/signin");
+    };
+    window.addEventListener("efm:401", handle401);
+    return () => window.removeEventListener("efm:401", handle401);
+  }, [clearSession, navigate]);
 
   useEffect(() => {
     if (!user) {
@@ -100,6 +110,7 @@ export function AuthProvider({ children }) {
       setWallet(data.user.wallet);
       setTokenExpired(false);
       setInactiveLogout(false);
+      setSessionTimeout(false);
       return data;
     } finally {
       setLoading(false);
@@ -151,7 +162,12 @@ export function AuthProvider({ children }) {
     <AuthContext.Provider
       value={{ user, wallet, loading, login, register, logout, refreshWallet, updateUser }}
     >
-      {tokenExpired && (
+      {sessionTimeout && (
+        <div style={{ ...bannerStyle, background: "rgba(239,68,68,0.95)", color: "#fff" }}>
+          Session timeout. Please log in again.
+        </div>
+      )}
+      {tokenExpired && !sessionTimeout && (
         <div style={{ ...bannerStyle, background: "#dc2626", color: "#fff" }}>
           Session expired. Please log in again.
         </div>

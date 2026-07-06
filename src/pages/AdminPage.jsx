@@ -202,11 +202,16 @@ export default function AdminPage() {
   const navigate = useNavigate();
   const [tab, setTab] = useState("Users");
 
+  // Stats
+  const [stats, setStats] = useState(null);
+
   // Users
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [expandedUser, setExpandedUser] = useState(null);
   const [walletEdits, setWalletEdits] = useState({});
+  const [codeEdits, setCodeEdits] = useState({});
+  const [dateJoinedEdits, setDateJoinedEdits] = useState({});
 
   // Deposits
   const [deposits, setDeposits] = useState([]);
@@ -240,6 +245,10 @@ export default function AdminPage() {
   // useEffect(() => {
   //   if (user?.role !== "admin") { navigate("/dashboard"); return; }
   // }, [user]);
+
+  useEffect(() => {
+    api.adminStats().then(setStats).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (tab === "Users" && !users.length) loadUsers();
@@ -374,6 +383,29 @@ export default function AdminPage() {
     }
   };
 
+  const handleSaveCodes = async (userId) => {
+    const codes = codeEdits[userId] || {};
+    try {
+      await api.adminSetCodes(userId, { cotCode: codes.cotCode ?? null, imtCode: codes.imtCode ?? null, tacCode: codes.tacCode ?? null });
+      showToast("✅ Codes saved.");
+      loadUsers();
+    } catch (err) {
+      showToast("❌ " + err.message);
+    }
+  };
+
+  const handleSaveDateJoined = async (userId) => {
+    const date = dateJoinedEdits[userId];
+    if (!date) return;
+    try {
+      await api.adminSetDateJoined(userId, date);
+      showToast("✅ Date joined updated.");
+      loadUsers();
+    } catch (err) {
+      showToast("❌ " + err.message);
+    }
+  };
+
   const handleTicketReply = async (id, status) => {
     const reply = ticketReply[id] || "";
     try {
@@ -459,6 +491,23 @@ export default function AdminPage() {
             Control Panel
           </h1>
         </div>
+
+        {/* Stat cards */}
+        {stats && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginBottom: "20px" }}>
+            {[
+              { label: "Total Users", value: stats.totalUsers, color: "#60A5FA" },
+              { label: "Total Deposited", value: fmtFull(stats.totalDeposited), color: "#34D399" },
+              { label: "Pending Deposits", value: stats.pendingDeposits, color: "#FCD34D" },
+              { label: "This Week", value: fmtFull(stats.week?.amount || 0), color: "#A78BFA" },
+            ].map((s) => (
+              <div key={s.label} style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "14px", padding: "14px" }}>
+                <div style={{ fontSize: "9px", fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: "rgba(148,163,184,0.45)", marginBottom: "6px" }}>{s.label}</div>
+                <div style={{ fontSize: "18px", fontWeight: 900, color: s.color }}>{s.value}</div>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Tabs */}
         <div
@@ -841,6 +890,56 @@ export default function AdminPage() {
                       >
                         Save Wallet
                       </button>
+
+                      {/* Transfer Verification Codes */}
+                      <div style={{ marginTop: "16px", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "14px" }}>
+                        <div style={{ fontSize: "12px", fontWeight: 700, color: "rgba(148,163,184,0.5)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>
+                          Transfer Verification Codes
+                        </div>
+                        {[
+                          { key: "cotCode", label: "COT (Commission on Turnover)", current: u.cotCode },
+                          { key: "imtCode", label: "IMT (Intl. Money Transfer)", current: u.imtCode },
+                          { key: "tacCode", label: "TAC (Transfer Auth. Code)", current: u.tacCode },
+                        ].map(({ key, label, current }) => (
+                          <div key={key} style={{ marginBottom: "8px" }}>
+                            <label style={{ display: "block", fontSize: "10px", color: "rgba(148,163,184,0.5)", marginBottom: "4px", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                              {label} {current && <span style={{ color: "#FCD34D" }}>· Set</span>}
+                            </label>
+                            <input
+                              type="text"
+                              placeholder={current ? "Leave blank to clear" : "Set code…"}
+                              value={(codeEdits[u.id] || {})[key] ?? ""}
+                              onChange={(e) => setCodeEdits(prev => ({ ...prev, [u.id]: { ...(prev[u.id] || {}), [key]: e.target.value } }))}
+                              style={{ width: "100%", background: "rgba(10,18,40,0.7)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "8px 10px", color: "#E2E8F0", fontSize: "13px", outline: "none", boxSizing: "border-box" }}
+                            />
+                          </div>
+                        ))}
+                        <button
+                          onClick={() => handleSaveCodes(u.id)}
+                          style={{ width: "100%", padding: "9px", borderRadius: "9px", border: "1px solid rgba(26,86,219,0.4)", background: "rgba(26,86,219,0.12)", color: "#60A5FA", fontSize: "12px", fontWeight: 700, cursor: "pointer", fontFamily: "Inter, sans-serif" }}
+                        >
+                          Save Codes
+                        </button>
+                      </div>
+
+                      {/* Update Date Joined */}
+                      <div style={{ marginTop: "14px", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "14px" }}>
+                        <div style={{ fontSize: "12px", fontWeight: 700, color: "rgba(148,163,184,0.5)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>
+                          Update Date Joined
+                        </div>
+                        <input
+                          type="date"
+                          value={dateJoinedEdits[u.id] ?? ""}
+                          onChange={(e) => setDateJoinedEdits(prev => ({ ...prev, [u.id]: e.target.value }))}
+                          style={{ width: "100%", background: "rgba(10,18,40,0.7)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "8px 10px", color: "#E2E8F0", fontSize: "13px", outline: "none", boxSizing: "border-box", marginBottom: "8px" }}
+                        />
+                        <button
+                          onClick={() => handleSaveDateJoined(u.id)}
+                          style={{ width: "100%", padding: "9px", borderRadius: "9px", border: "1px solid rgba(52,211,153,0.3)", background: "rgba(52,211,153,0.08)", color: "#34D399", fontSize: "12px", fontWeight: 700, cursor: "pointer", fontFamily: "Inter, sans-serif" }}
+                        >
+                          Update Date Joined
+                        </button>
+                      </div>
 
                       {/* Credit cards on this user */}
                       {u.creditCards?.length > 0 && (

@@ -5,15 +5,25 @@ import { useAuth } from "../lib/AuthContext.jsx";
 import { api } from "../lib/api.js";
 import { Link } from "react-router-dom";
 
+function CopyIcon({ size = 14 }) {
+  return (
+    <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+      <rect x="9" y="9" width="13" height="13" rx="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" />
+    </svg>
+  );
+}
+
 const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:4000/api").replace(/\/api$/, "");
 
 function fmt(n, currency = "USD") {
   return (n || 0).toLocaleString("en-US", { style: "currency", currency, minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function maskAccount(num) {
-  if (!num) return "•••• ••••";
-  return "•••• " + String(num).slice(-4);
+function formatAccount(num) {
+  if (!num) return "•••• •••• ••••";
+  const s = String(num);
+  return s.match(/.{1,4}/g)?.join(" ") || s;
 }
 
 // Chip SVG for bank card
@@ -45,6 +55,15 @@ export default function DashboardPage() {
   const [balanceVisible, setBalanceVisible] = useState(true);
   const [transactions, setTransactions] = useState([]);
   const [txLoading, setTxLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyAccount = (e) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(accountNumber).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   const balance = wallet?.balance || 0;
   const cryptoBalance = wallet?.cryptoBalance || 0;
@@ -169,8 +188,11 @@ export default function DashboardPage() {
 
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
                       <div>
-                        <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.4)", marginBottom: "2px", letterSpacing: "0.12em" }}>
-                          {maskAccount(accountNumber)}
+                        <div style={{ fontSize: "11px", color: "rgba(255,255,255,0.55)", marginBottom: "2px", letterSpacing: "0.12em", display: "flex", alignItems: "center", gap: "6px" }}>
+                          {formatAccount(accountNumber)}
+                          <button onClick={handleCopyAccount} style={{ background: "none", border: "none", cursor: "pointer", color: copied ? "#34D399" : "rgba(255,255,255,0.4)", padding: 0, display: "flex", alignItems: "center" }}>
+                            {copied ? <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#34D399" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg> : <CopyIcon />}
+                          </button>
                         </div>
                         <div style={{ fontSize: "11px", fontWeight: 700, color: "rgba(255,255,255,0.7)", letterSpacing: "0.05em", textTransform: "uppercase" }}>
                           {fullNameUpper.substring(0, 22)}
@@ -269,7 +291,7 @@ export default function DashboardPage() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: "8px", marginBottom: "24px" }}>
             {[
               { label: "Fund", icon: "↓", to: "/deposit", color: "#1A56DB" },
-              { label: "Transfer", icon: "→", to: "/wallet", color: "#10B981" },
+              { label: "Transfer", icon: "→", to: "/transfer", color: "#10B981" },
               { label: "History", icon: "≡", to: "/wallet", color: "#C9A227" },
               { label: "Support", icon: "?", to: "/support", color: "#8B5CF6" },
             ].map((action) => (
@@ -291,7 +313,7 @@ export default function DashboardPage() {
           <div style={{ background: "linear-gradient(135deg,#0D1F3C,#0A1628)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "18px", padding: "18px 20px", marginBottom: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
               <div style={{ fontSize: "13px", fontWeight: 700, color: "white" }}>Account Overview</div>
-              <div style={{ fontSize: "11px", color: "rgba(148,163,184,0.5)", fontWeight: 600 }}>Acc: {maskAccount(accountNumber)}</div>
+              <div style={{ fontSize: "11px", color: "rgba(148,163,184,0.5)", fontWeight: 600 }}>Acc: {formatAccount(accountNumber)}</div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
               {[

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import AppShell from "../components/AppShell.jsx";
 import { api } from "../lib/api.js";
 import { useAuth } from "../lib/AuthContext.jsx";
@@ -21,10 +21,12 @@ function fmt(n, currency = "USD") {
 
 export default function WalletPage() {
   const { wallet, user, refreshWallet } = useAuth();
+  const navigate = useNavigate();
   const [tab, setTab] = useState("all");
   const [transactions, setTransactions] = useState([]);
   const [deposits, setDeposits] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
 
   useEffect(() => {
     Promise.all([api.getTransactions(), api.getMyDeposits()])
@@ -98,7 +100,9 @@ export default function WalletPage() {
             + Fund Account
           </button>
         </Link>
-        <button style={{ width: "100%", padding: "13px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", color: "#94A3B8", fontSize: "14px", fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
+        <button
+          onClick={() => setShowWithdrawModal(true)}
+          style={{ width: "100%", padding: "13px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.08)", background: "rgba(255,255,255,0.04)", color: "#94A3B8", fontSize: "14px", fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
           Withdraw
         </button>
       </div>
@@ -182,6 +186,30 @@ export default function WalletPage() {
       )}
 
       <div style={{ height: "16px" }} />
+
+      {showWithdrawModal && (
+        <div onClick={() => setShowWithdrawModal(false)} style={{ position: "fixed", inset: 0, zIndex: 500, background: "rgba(0,0,0,0.7)", backdropFilter: "blur(6px)", display: "flex", alignItems: "flex-end", justifyContent: "center", padding: "0 0 24px" }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: "#0D1629", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "20px", padding: "28px 24px", width: "100%", maxWidth: "400px", textAlign: "center" }}>
+            <div style={{ width: "60px", height: "60px", borderRadius: "50%", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.25)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
+              <svg width="26" height="26" fill="none" viewBox="0 0 24 24" stroke="#FCD34D" strokeWidth="1.8">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+              </svg>
+            </div>
+            <h3 style={{ fontSize: "18px", fontWeight: 800, color: "white", marginBottom: "10px" }}>No Card on File</h3>
+            <p style={{ fontSize: "13px", color: "rgba(148,163,184,0.65)", lineHeight: 1.7, marginBottom: "24px" }}>
+              To make withdrawals, you need an <strong style={{ color: "white" }}>EliteFin Markets debit card</strong> delivered to your address. Request your card now to get started.
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <button onClick={() => navigate("/request-card")} style={{ width: "100%", padding: "13px", borderRadius: "12px", border: "none", background: "linear-gradient(135deg,#1A56DB,#1247C0)", color: "white", fontSize: "14px", fontWeight: 700, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
+                Request a Card
+              </button>
+              <button onClick={() => setShowWithdrawModal(false)} style={{ width: "100%", padding: "12px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.08)", background: "transparent", color: "#94A3B8", fontSize: "14px", fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }

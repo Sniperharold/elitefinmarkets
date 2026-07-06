@@ -8,6 +8,10 @@ import DepositPage from "./pages/DepositPage.jsx";
 import AdminPage from "./pages/AdminPage.jsx";
 import SupportPage from "./pages/SupportPage.jsx";
 import ProfilePage from "./pages/ProfilePage.jsx";
+import CardsPage from "./pages/CardsPage.jsx";
+import RequestCardPage from "./pages/RequestCardPage.jsx";
+import TrackCardPage from "./pages/TrackCardPage.jsx";
+import TransferPage from "./pages/TransferPage.jsx";
 import { AuthProvider } from "./lib/AuthContext.jsx";
 
 export default function App() {
@@ -23,6 +27,10 @@ export default function App() {
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/support" element={<SupportPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/cards" element={<CardsPage />} />
+        <Route path="/request-card" element={<RequestCardPage />} />
+        <Route path="/track-card" element={<TrackCardPage />} />
+        <Route path="/transfer" element={<TransferPage />} />
       </Routes>
     </AuthProvider>
   );

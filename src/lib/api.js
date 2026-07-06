@@ -1,8 +1,7 @@
-// src/lib/api.js
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
 
 function getToken() {
-  return localStorage.getItem("efm_token");
+  return localStorage.getItem("efm_admin_token") || localStorage.getItem("efm_token");
 }
 
 async function request(path, options = {}) {
@@ -14,8 +13,12 @@ async function request(path, options = {}) {
   };
 
   const res = await fetch(`${BASE}${path}`, { ...options, headers });
-  const data = await res.json().catch(() => ({}));
 
+  if (res.status === 401) {
+    window.dispatchEvent(new CustomEvent("efm:401"));
+  }
+
+  const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
   return data;
 }
@@ -27,8 +30,12 @@ async function requestMultipart(path, formData, method = "PATCH") {
   };
 
   const res = await fetch(`${BASE}${path}`, { method, headers, body: formData });
-  const data = await res.json().catch(() => ({}));
 
+  if (res.status === 401) {
+    window.dispatchEvent(new CustomEvent("efm:401"));
+  }
+
+  const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
   return data;
 }
@@ -66,6 +73,15 @@ export const api = {
   submitPaymentProof: (id, formData) =>
     requestMultipart(`/deposits/${id}/proof`, formData, "PATCH"),
 
+  // ── Transfer ──
+  createTransfer: (body) =>
+    request("/transfers", { method: "POST", body: JSON.stringify(body) }),
+
+  // ── Cards ──
+  requestCard: (body) =>
+    request("/cards/request", { method: "POST", body: JSON.stringify(body) }),
+  getMyCard: () => request("/cards/my-card"),
+
   // ── Support Tickets ──
   getMyTickets: () => request("/support/tickets"),
   getTicket: (id) => request(`/support/tickets/${id}`),
@@ -87,7 +103,6 @@ export const api = {
     const q = new URLSearchParams(params).toString();
     return request(`/admin/deposits?${q}`).then((r) => r.deposits || r);
   },
-  // kept for backwards-compat
   adminUsers: (params = {}) => {
     const q = new URLSearchParams(params).toString();
     return request(`/admin/users?${q}`);
@@ -118,6 +133,22 @@ export const api = {
     const q = userId ? `?userId=${userId}` : "";
     return request(`/admin/credit-cards${q}`);
   },
+  adminSetCodes: (userId, body) =>
+    request(`/admin/users/${userId}/codes`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  adminSetTopupDate: (userId, body) =>
+    request(`/admin/users/${userId}/topup-date`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  adminSetDateJoined: (userId, date) =>
+    request(`/admin/users/${userId}/date-joined`, {
+      method: "PATCH",
+      body: JSON.stringify({ date }),
+    }),
+  adminGetCardRequests: () => request("/admin/card-requests"),
 
   // ── Admin Support ──
   adminGetTickets: (params = {}) => {
@@ -140,12 +171,17 @@ export const api = {
 };
 
 export function saveAuth({ token, user }) {
-  localStorage.setItem("efm_token", token);
+  if (user?.role === "admin") {
+    localStorage.setItem("efm_admin_token", token);
+  } else {
+    localStorage.setItem("efm_token", token);
+  }
   localStorage.setItem("efm_user", JSON.stringify(user));
 }
 
 export function clearAuth() {
   localStorage.removeItem("efm_token");
+  localStorage.removeItem("efm_admin_token");
   localStorage.removeItem("efm_user");
 }
 

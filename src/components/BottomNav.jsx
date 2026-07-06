@@ -38,11 +38,13 @@ const navItems = [
     ),
   },
   {
-    label: "Profile",
-    to: "/profile",
+    label: "Cards",
+    to: "/cards",
     icon: (active) => (
       <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke={active ? "#1A56DB" : "rgba(100,116,139,0.7)"} strokeWidth="1.8">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+        <rect x="2" y="5" width="20" height="14" rx="3" strokeLinecap="round" strokeLinejoin="round" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M2 10h20" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 15h4" />
       </svg>
     ),
   },
