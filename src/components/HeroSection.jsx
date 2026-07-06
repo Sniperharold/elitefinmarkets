@@ -1,108 +1,96 @@
 import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
-
-const ALERTS = [
-  { text: "NEW ACCOUNT: Emily just opened a Premium Savings account in minutes." },
-  { text: "TRANSFER: Marcus completed an international wire to London — settled instantly." },
-  { text: "MILESTONE: Sophia reached $100,000 in her savings account." },
-  { text: "DEPOSIT: James funded his account via crypto — confirmed in under 10 minutes." },
-  { text: "SECURITY: Your account is protected by 256-bit bank-grade encryption." },
-  { text: "NEW ACCOUNT: Valentina opened a Checking account from her phone in 3 minutes." },
-  { text: "TRANSFER: Benjamin sent $5,000 internationally — zero hidden fees." },
-  { text: "MILESTONE: Rodrigo's portfolio reached $250,000 across his accounts." },
-  { text: "DEPOSIT: Catherine's bank transfer confirmed — funds available immediately." },
-  { text: "SECURITY: 2-factor authentication activated on 12,400+ accounts today." },
-  { text: "NEW ACCOUNT: Alexander joined Elitefinmarkets — welcome!" },
-  { text: "TRANSFER: Elena sent funds to 3 countries in a single afternoon." },
-];
 
 export default function HeroSection() {
-  const [alertIdx, setAlertIdx] = useState(0);
-  const [visible, setVisible] = useState(true);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setVisible(false);
-      setTimeout(() => { setAlertIdx((i) => (i + 1) % ALERTS.length); setVisible(true); }, 600);
-    }, 4000);
-    return () => clearTimeout(timer);
-  }, [alertIdx]);
-
   return (
-    <section className="relative pt-28 pb-16 md:pt-36 md:pb-24 overflow-hidden"
-      style={{
-        backgroundImage: `
-          radial-gradient(ellipse 80% 50% at 50% -20%, rgba(26,86,219,0.28), transparent),
-          radial-gradient(rgba(59,130,246,0.07) 1px, transparent 1px)
-        `,
-        backgroundSize: "auto, 30px 30px",
-      }}>
-      <div className="absolute top-20 left-1/4 w-96 h-96 rounded-full pointer-events-none" style={{ background: "rgba(26,86,219,0.05)", filter: "blur(80px)" }} />
-      <div className="absolute top-40 right-1/4 w-64 h-64 rounded-full pointer-events-none" style={{ background: "rgba(201,162,39,0.04)", filter: "blur(80px)" }} />
+    <section style={{ position: "relative", width: "100%", minHeight: "100vh", display: "flex", flexDirection: "column" }}>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Badge */}
-        <div className="flex justify-center mb-6">
-          <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold"
-            style={{ background: "linear-gradient(135deg,rgba(201,162,39,0.15),rgba(252,211,77,0.08))", border: "1px solid rgba(201,162,39,0.3)" }}>
-            <span>🏦</span>
-            <span className="text-yellow-300 tracking-widest uppercase text-xs">Trusted Digital Bank</span>
-          </span>
-        </div>
+      {/* Background image */}
+      <div style={{ position: "absolute", inset: 0, backgroundImage: "url('/images/hero-banner.jpg')", backgroundSize: "cover", backgroundPosition: "center top", zIndex: 0 }} />
+      {/* Dark overlay — stronger on left, fades right */}
+      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(to right, rgba(0,0,0,0.80) 0%, rgba(0,0,0,0.55) 50%, rgba(0,0,0,0.15) 100%)", zIndex: 1 }} />
 
-        {/* Headline */}
-        <div className="text-center max-w-4xl mx-auto">
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-tight tracking-tight text-white mb-2">
-            Modern Banking
+      {/* Hero content */}
+      <div style={{ position: "relative", zIndex: 2, flex: 1, display: "flex", alignItems: "center", padding: "120px 6% 60px" }}>
+        <div style={{ maxWidth: "560px" }}>
+          <h1 style={{ fontSize: "clamp(2.4rem, 6vw, 4.5rem)", fontWeight: 900, color: "white", lineHeight: 1.08, letterSpacing: "-0.02em", marginBottom: "14px", fontFamily: "Inter, sans-serif" }}>
+            EliteFin Markets
           </h1>
-          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-tight tracking-tight gradient-text mb-6">
-            Built for Everyone.
-          </h1>
-          <p className="text-brand-text text-base sm:text-lg max-w-xl mx-auto leading-relaxed mb-10">
-            Elitefinmarkets gives you bank-grade security, instant global transfers, multi-currency accounts, and 24/7 support — all from your phone.
+          <h2 style={{ fontSize: "clamp(1.05rem, 2.4vw, 1.45rem)", fontWeight: 600, color: "rgba(255,255,255,0.85)", marginBottom: "18px", fontFamily: "Inter, sans-serif", lineHeight: 1.4 }}>
+            Your Digital Banking Partner
+          </h2>
+          <p style={{ fontSize: "15px", color: "rgba(255,255,255,0.62)", lineHeight: 1.78, marginBottom: "36px", fontFamily: "Inter, sans-serif", maxWidth: "460px" }}>
+            We do banking differently. We believe that people come first, and that everyone deserves a great experience every step of the way.
           </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-14">
-            <Link to="/register"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-bold text-white text-base"
-              style={{ background: "linear-gradient(135deg,#1A56DB,#1247C0)", boxShadow: "0 8px 32px rgba(26,86,219,0.45)" }}>
-              Open Free Account
-              <span style={{ fontSize: "18px" }}>→</span>
+          <div style={{ display: "flex", gap: "14px", flexWrap: "wrap" }}>
+            <Link
+              to="/register"
+              style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "13px 26px", borderRadius: "10px", background: "#0D9488", color: "white", fontSize: "15px", fontWeight: 700, textDecoration: "none", fontFamily: "Inter, sans-serif", whiteSpace: "nowrap" }}
+            >
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              Open Account Today
             </Link>
-            <Link to="/signin"
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold text-base"
-              style={{ border: "1px solid rgba(255,255,255,0.12)", color: "#E2E8F0", background: "rgba(255,255,255,0.04)" }}>
-              Sign In
+            <Link
+              to="/signin"
+              style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "13px 26px", borderRadius: "10px", background: "rgba(255,255,255,0.1)", color: "white", fontSize: "15px", fontWeight: 600, textDecoration: "none", fontFamily: "Inter, sans-serif", border: "1px solid rgba(255,255,255,0.22)", whiteSpace: "nowrap" }}
+            >
+              Login to Banking
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
             </Link>
           </div>
         </div>
+      </div>
 
-        {/* Live alerts ticker */}
-        <div className="max-w-2xl mx-auto mb-14">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl"
-            style={{ background: "rgba(26,86,219,0.08)", border: "1px solid rgba(26,86,219,0.2)" }}>
-            <span className="w-2 h-2 rounded-full flex-shrink-0 live-dot" style={{ background: "#34D399" }} />
-            <p className="text-xs text-brand-text font-medium transition-opacity duration-300 truncate"
-              style={{ opacity: visible ? 1 : 0, transition: "opacity 0.3s" }}>
-              {ALERTS[alertIdx].text}
-            </p>
+      {/* Info cards — full width at bottom */}
+      <div className="grid grid-cols-1 md:grid-cols-3" style={{ position: "relative", zIndex: 2 }}>
+
+        {/* Routing # */}
+        <div style={{ background: "#1A56DB", padding: "26px 28px", display: "flex", alignItems: "flex-start", gap: "16px" }}>
+          <div style={{ width: "44px", height: "44px", borderRadius: "9px", background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="1.6">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+              <polyline points="9 22 9 12 15 12 15 22" />
+            </svg>
+          </div>
+          <div>
+            <div style={{ fontSize: "10px", fontWeight: 700, color: "rgba(255,255,255,0.6)", letterSpacing: "0.12em", marginBottom: "5px", fontFamily: "Inter, sans-serif" }}>ROUTING #</div>
+            <div style={{ fontSize: "22px", fontWeight: 800, color: "white", fontFamily: "Inter, sans-serif", letterSpacing: "-0.01em" }}>251480576</div>
           </div>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 max-w-3xl mx-auto">
-          {[
-            { value: "250K+", label: "Active Accounts" },
-            { value: "$4.2B", label: "Deposits Processed" },
-            { value: "180+", label: "Countries Served" },
-            { value: "99.98%", label: "Uptime SLA" },
-          ].map((s) => (
-            <div key={s.label} className="text-center">
-              <div className="text-2xl sm:text-3xl font-black text-white mb-1">{s.value}</div>
-              <div className="text-xs text-brand-muted font-medium">{s.label}</div>
-            </div>
-          ))}
+        {/* Branch Hours */}
+        <div style={{ background: "#0D9488", padding: "26px 28px", display: "flex", alignItems: "flex-start", gap: "16px" }}>
+          <div style={{ width: "44px", height: "44px", borderRadius: "9px", background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="1.6">
+              <circle cx="12" cy="12" r="10" />
+              <polyline points="12 6 12 12 16 14" />
+            </svg>
+          </div>
+          <div>
+            <div style={{ fontSize: "10px", fontWeight: 700, color: "rgba(255,255,255,0.6)", letterSpacing: "0.12em", marginBottom: "5px", fontFamily: "Inter, sans-serif" }}>BRANCH HOURS</div>
+            <div style={{ fontSize: "15px", fontWeight: 700, color: "white", fontFamily: "Inter, sans-serif" }}>Mon-Fri: 9AM-5PM</div>
+            <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.75)", fontFamily: "Inter, sans-serif", marginTop: "2px" }}>Sat: 9AM-1PM</div>
+          </div>
         </div>
+
+        {/* 24/7 Support */}
+        <div style={{ background: "#7C3AED", padding: "26px 28px", display: "flex", alignItems: "flex-start", gap: "16px" }}>
+          <div style={{ width: "44px", height: "44px", borderRadius: "9px", background: "rgba(255,255,255,0.18)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth="1.6">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.37 2 2 0 0 1 3.6 1h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.5a16 16 0 0 0 6 6l.94-.94a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+            </svg>
+          </div>
+          <div>
+            <div style={{ fontSize: "10px", fontWeight: 700, color: "rgba(255,255,255,0.6)", letterSpacing: "0.12em", marginBottom: "5px", fontFamily: "Inter, sans-serif" }}>24/7 SUPPORT</div>
+            <div style={{ fontSize: "15px", fontWeight: 700, color: "white", fontFamily: "Inter, sans-serif" }}>1-800-BANKING</div>
+            <div style={{ fontSize: "13px", color: "rgba(255,255,255,0.75)", fontFamily: "Inter, sans-serif", marginTop: "2px" }}>Always here to help</div>
+          </div>
+        </div>
+
       </div>
     </section>
   );
