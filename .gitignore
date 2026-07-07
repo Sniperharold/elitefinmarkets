@@ -25,3 +25,9 @@ _node_modules
 *.njsproj
 *.sln
 *.sw?
+
+elitefinmarkets-be
+/elitefinmarkets-be
+gsv-be/gsv-be
+/landing-retrieved
+landing-retrieved

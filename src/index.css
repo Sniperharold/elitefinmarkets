@@ -81,3 +81,11 @@ body {
   to   { opacity: 1; transform: translateY(0); }
 }
 .fade-up { animation: fadeUp 0.55s ease both; }
+
+/* ── Hero section: mobile layout ── */
+@media (max-width: 767.98px) {
+  .hero-desktop-content { display: none !important; }
+  .hero-info-cards { display: none !important; }
+  .hero-bank-icon-mobile { display: flex !important; }
+  .hero-stats { display: flex !important; }
+}
