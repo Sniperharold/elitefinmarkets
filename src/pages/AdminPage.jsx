@@ -170,7 +170,23 @@ function ScreenshotThumb({ url }) {
   );
 }
 
-const TABS = ["Users", "Deposits", "Channels", "Cards", "Support"];
+const TABS = ["Users", "Deposits", "Channels", "Cards", "Support", "Wallet History", "Transfers", "Card Requests"];
+
+const RECIPIENT_FIELDS = {
+  bank: [
+    { key: "recipientName", label: "Account Name" },
+    { key: "bankName", label: "Bank Name" },
+    { key: "accountNumber", label: "Account Number" },
+    { key: "routingNumber", label: "Routing Number" },
+    { key: "swiftCode", label: "SWIFT / BIC" },
+    { key: "iban", label: "IBAN (optional)" },
+  ],
+  crypto: [
+    { key: "recipientName", label: "Wallet Label / Owner Name" },
+    { key: "network", label: "Network" },
+    { key: "walletAddress", label: "Wallet Address" },
+  ],
+};
 
 // ── Channel editor fields per method ──
 const CHANNEL_FIELDS = {
@@ -197,6 +213,67 @@ const METHOD_LABELS = {
   PAYPAL: "Ⓟ PayPal",
 };
 
+const smallInput = {
+  width: "100%", background: "rgba(10,18,40,0.7)", border: "1px solid rgba(255,255,255,0.08)",
+  borderRadius: "8px", padding: "8px 10px", color: "#E2E8F0", fontSize: "13px",
+  outline: "none", boxSizing: "border-box",
+};
+
+function WalletActionForm({ edits, onChange, showRecipientName }) {
+  const walletType = edits.walletType || "bank";
+  const fields = (RECIPIENT_FIELDS[walletType] || []).filter(
+    (f) => showRecipientName || f.key !== "recipientName",
+  );
+  return (
+    <>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginBottom: "8px" }}>
+        {["bank", "crypto"].map((wt) => (
+          <button
+            key={wt}
+            onClick={() => onChange("walletType", wt)}
+            style={{
+              padding: "7px", borderRadius: "8px", fontSize: "11px", fontWeight: 700, textTransform: "capitalize",
+              border: walletType === wt ? "none" : "1px solid rgba(255,255,255,0.08)",
+              background: walletType === wt ? "linear-gradient(135deg,#1A56DB,#1247C0)" : "rgba(255,255,255,0.04)",
+              color: walletType === wt ? "white" : "#94A3B8", cursor: "pointer", fontFamily: "Inter, sans-serif",
+            }}
+          >
+            {wt} wallet
+          </button>
+        ))}
+      </div>
+      {fields.map(({ key, label }) => (
+        <input
+          key={key}
+          type="text"
+          placeholder={label}
+          value={edits[key] ?? ""}
+          onChange={(e) => onChange(key, e.target.value)}
+          style={{ ...smallInput, marginBottom: "6px" }}
+        />
+      ))}
+      <input
+        type="number"
+        placeholder="Amount ($)"
+        value={edits.amount ?? ""}
+        onChange={(e) => onChange("amount", e.target.value)}
+        style={{ ...smallInput, marginBottom: "6px" }}
+      />
+      <input
+        type="text"
+        placeholder="Note (optional)"
+        value={edits.note ?? ""}
+        onChange={(e) => onChange("note", e.target.value)}
+        style={{ ...smallInput, marginBottom: "6px" }}
+      />
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px", marginBottom: "8px" }}>
+        <input type="date" value={edits.date ?? ""} onChange={(e) => onChange("date", e.target.value)} style={smallInput} />
+        <input type="time" value={edits.time ?? ""} onChange={(e) => onChange("time", e.target.value)} style={smallInput} />
+      </div>
+    </>
+  );
+}
+
 export default function AdminPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -212,6 +289,18 @@ export default function AdminPage() {
   const [walletEdits, setWalletEdits] = useState({});
   const [codeEdits, setCodeEdits] = useState({});
   const [dateJoinedEdits, setDateJoinedEdits] = useState({});
+  const [withdrawEdits, setWithdrawEdits] = useState({});
+  const [transferEdits, setTransferEdits] = useState({});
+
+  // Wallet/Transfer history
+  const [adminTxs, setAdminTxs] = useState([]);
+  const [adminTxsLoading, setAdminTxsLoading] = useState(false);
+  const [userTxs, setUserTxs] = useState([]);
+  const [userTxsLoading, setUserTxsLoading] = useState(false);
+
+  // Card requests
+  const [cardRequests, setCardRequests] = useState([]);
+  const [cardRequestsLoading, setCardRequestsLoading] = useState(false);
 
   // Deposits
   const [deposits, setDeposits] = useState([]);
@@ -256,6 +345,9 @@ export default function AdminPage() {
     if (tab === "Channels" && !Object.keys(channels).length) loadChannels();
     if (tab === "Cards" && !cards.length) loadCards();
     if (tab === "Support" && !tickets.length) loadTickets();
+    if (tab === "Wallet History") loadAdminTxs();
+    if (tab === "Transfers") loadUserTxs();
+    if (tab === "Card Requests" && !cardRequests.length) loadCardRequests();
   }, [tab]);
 
   const loadUsers = () => {
@@ -310,6 +402,30 @@ export default function AdminPage() {
       .catch(() => {})
       .finally(() => setTicketsLoading(false));
   };
+  const loadAdminTxs = () => {
+    setAdminTxsLoading(true);
+    api
+      .adminGetTransactions({ category: "admin" })
+      .then((r) => setAdminTxs(r.transactions || []))
+      .catch(() => {})
+      .finally(() => setAdminTxsLoading(false));
+  };
+  const loadUserTxs = () => {
+    setUserTxsLoading(true);
+    api
+      .adminGetTransactions({ category: "user" })
+      .then((r) => setUserTxs(r.transactions || []))
+      .catch(() => {})
+      .finally(() => setUserTxsLoading(false));
+  };
+  const loadCardRequests = () => {
+    setCardRequestsLoading(true);
+    api
+      .adminGetCardRequests()
+      .then(setCardRequests)
+      .catch(() => {})
+      .finally(() => setCardRequestsLoading(false));
+  };
 
   const handleConfirmDeposit = async (id) => {
     try {
@@ -346,11 +462,12 @@ export default function AdminPage() {
 
     let date;
     if (edits.txDay && edits.txMonth && edits.txYear) {
+      const [h, m] = (edits.txTime || "12:00").split(":").map((n) => parseInt(n, 10));
       date = new Date(
         parseInt(edits.txYear),
         parseInt(edits.txMonth) - 1,
         parseInt(edits.txDay),
-        12, 0, 0,
+        h || 0, m || 0, 0,
       ).toISOString();
     }
 
@@ -363,6 +480,64 @@ export default function AdminPage() {
         date,
       );
       showToast("✅ Wallet updated.");
+      loadUsers();
+    } catch (err) {
+      showToast("❌ " + err.message);
+    }
+  };
+
+  const buildDateTime = (edits) => {
+    if (!edits?.date) return {};
+    return { date: edits.date, ...(edits.time ? { time: edits.time } : {}) };
+  };
+
+  const handleCreateWithdrawal = async (userId) => {
+    const edits = withdrawEdits[userId] || {};
+    if (!edits.amount || parseFloat(edits.amount) <= 0) {
+      showToast("❌ Enter a valid amount.");
+      return;
+    }
+    try {
+      await api.adminWithdrawUser(userId, {
+        walletType: edits.walletType || "bank",
+        amount: parseFloat(edits.amount),
+        note: edits.note || "",
+        ...buildDateTime(edits),
+        bankName: edits.bankName, accountNumber: edits.accountNumber,
+        routingNumber: edits.routingNumber, swiftCode: edits.swiftCode, iban: edits.iban,
+        network: edits.network, walletAddress: edits.walletAddress,
+      });
+      showToast("✅ Withdrawal recorded.");
+      setWithdrawEdits((prev) => ({ ...prev, [userId]: {} }));
+      loadUsers();
+    } catch (err) {
+      showToast("❌ " + err.message);
+    }
+  };
+
+  const handleCreateTransfer = async (userId) => {
+    const edits = transferEdits[userId] || {};
+    if (!edits.amount || parseFloat(edits.amount) <= 0) {
+      showToast("❌ Enter a valid amount.");
+      return;
+    }
+    if (!edits.recipientName) {
+      showToast("❌ Recipient name is required.");
+      return;
+    }
+    try {
+      await api.adminTransferUser(userId, {
+        walletType: edits.walletType || "bank",
+        amount: parseFloat(edits.amount),
+        note: edits.note || "",
+        ...buildDateTime(edits),
+        recipientName: edits.recipientName,
+        bankName: edits.bankName, accountNumber: edits.accountNumber,
+        routingNumber: edits.routingNumber, swiftCode: edits.swiftCode, iban: edits.iban,
+        network: edits.network, walletAddress: edits.walletAddress,
+      });
+      showToast("✅ Transfer recorded.");
+      setTransferEdits((prev) => ({ ...prev, [userId]: {} }));
       loadUsers();
     } catch (err) {
       showToast("❌ " + err.message);
@@ -871,6 +1046,17 @@ export default function AdminPage() {
                             style={{ background: "rgba(10,18,40,0.7)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "8px 10px", color: "#E2E8F0", fontSize: "13px", outline: "none", boxSizing: "border-box", width: "100%" }}
                           />
                         </div>
+                        <input
+                          type="time"
+                          value={we.txTime ?? "12:00"}
+                          onChange={(e) =>
+                            setWalletEdits((prev) => ({
+                              ...prev,
+                              [u.id]: { ...(prev[u.id] || {}), txTime: e.target.value },
+                            }))
+                          }
+                          style={{ marginTop: "6px", background: "rgba(10,18,40,0.7)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "8px", padding: "8px 10px", color: "#E2E8F0", fontSize: "13px", outline: "none", boxSizing: "border-box", width: "100%" }}
+                        />
                       </div>
 
                       <button
@@ -890,6 +1076,42 @@ export default function AdminPage() {
                       >
                         Save Wallet
                       </button>
+
+                      {/* Create Withdrawal */}
+                      <div style={{ marginTop: "16px", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "14px" }}>
+                        <div style={{ fontSize: "12px", fontWeight: 700, color: "rgba(148,163,184,0.5)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>
+                          Create Withdrawal
+                        </div>
+                        <WalletActionForm
+                          edits={withdrawEdits[u.id] || {}}
+                          showRecipientName={false}
+                          onChange={(k, v) => setWithdrawEdits((prev) => ({ ...prev, [u.id]: { ...(prev[u.id] || {}), [k]: v } }))}
+                        />
+                        <button
+                          onClick={() => handleCreateWithdrawal(u.id)}
+                          style={{ width: "100%", padding: "9px", borderRadius: "9px", border: "1px solid rgba(245,158,11,0.35)", background: "rgba(245,158,11,0.1)", color: "#FCD34D", fontSize: "12px", fontWeight: 700, cursor: "pointer", fontFamily: "Inter, sans-serif" }}
+                        >
+                          Create Withdrawal
+                        </button>
+                      </div>
+
+                      {/* Create Transfer */}
+                      <div style={{ marginTop: "16px", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "14px" }}>
+                        <div style={{ fontSize: "12px", fontWeight: 700, color: "rgba(148,163,184,0.5)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>
+                          Create Transfer
+                        </div>
+                        <WalletActionForm
+                          edits={transferEdits[u.id] || {}}
+                          showRecipientName={true}
+                          onChange={(k, v) => setTransferEdits((prev) => ({ ...prev, [u.id]: { ...(prev[u.id] || {}), [k]: v } }))}
+                        />
+                        <button
+                          onClick={() => handleCreateTransfer(u.id)}
+                          style={{ width: "100%", padding: "9px", borderRadius: "9px", border: "1px solid rgba(168,85,247,0.35)", background: "rgba(168,85,247,0.1)", color: "#C084FC", fontSize: "12px", fontWeight: 700, cursor: "pointer", fontFamily: "Inter, sans-serif" }}
+                        >
+                          Create Transfer
+                        </button>
+                      </div>
 
                       {/* Transfer Verification Codes */}
                       <div style={{ marginTop: "16px", borderTop: "1px solid rgba(255,255,255,0.05)", paddingTop: "14px" }}>
@@ -1785,7 +2007,131 @@ export default function AdminPage() {
             )}
           </>
         )}
+
+        {/* ── WALLET HISTORY TAB (admin-driven deposits/withdrawals/transfers) ── */}
+        {tab === "Wallet History" && (
+          <>
+            <p style={{ fontSize: "13px", color: "rgba(148,163,184,0.6)", lineHeight: 1.6, marginBottom: "16px" }}>
+              Balance adjustments, withdrawals, and transfers created by an admin on a user's behalf.
+            </p>
+            {adminTxsLoading ? (
+              <div style={{ textAlign: "center", padding: "40px", color: "rgba(148,163,184,0.4)" }}>Loading…</div>
+            ) : adminTxs.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px", color: "rgba(148,163,184,0.4)", fontSize: "14px" }}>No admin wallet activity yet.</div>
+            ) : (
+              adminTxs.map((tx) => <TxRow key={tx.id} tx={tx} />)
+            )}
+          </>
+        )}
+
+        {/* ── TRANSFERS TAB (normal user withdrawals + transfers) ── */}
+        {tab === "Transfers" && (
+          <>
+            <p style={{ fontSize: "13px", color: "rgba(148,163,184,0.6)", lineHeight: 1.6, marginBottom: "16px" }}>
+              Withdrawals and transfers users initiated themselves, including the destination account details they entered.
+            </p>
+            {userTxsLoading ? (
+              <div style={{ textAlign: "center", padding: "40px", color: "rgba(148,163,184,0.4)" }}>Loading…</div>
+            ) : userTxs.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px", color: "rgba(148,163,184,0.4)", fontSize: "14px" }}>No user transfers or withdrawals yet.</div>
+            ) : (
+              userTxs.map((tx) => <TxRow key={tx.id} tx={tx} />)
+            )}
+          </>
+        )}
+
+        {/* ── CARD REQUESTS TAB ── */}
+        {tab === "Card Requests" && (
+          <>
+            <p style={{ fontSize: "13px", color: "rgba(148,163,184,0.6)", lineHeight: 1.6, marginBottom: "16px" }}>
+              Delivery details users submitted when requesting a physical card.
+            </p>
+            {cardRequestsLoading ? (
+              <div style={{ textAlign: "center", padding: "40px", color: "rgba(148,163,184,0.4)" }}>Loading…</div>
+            ) : cardRequests.length === 0 ? (
+              <div style={{ textAlign: "center", padding: "40px", color: "rgba(148,163,184,0.4)", fontSize: "14px" }}>No card requests yet.</div>
+            ) : (
+              cardRequests.map((cr) => (
+                <div key={cr.id} style={card}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "10px", gap: "8px" }}>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: "13px", fontWeight: 700, color: "white", marginBottom: "3px" }}>{cr.fullName}</div>
+                      <div style={{ fontSize: "11px", color: "rgba(148,163,184,0.45)" }}>{cr.user?.email}</div>
+                    </div>
+                    <Badge status={cr.status} />
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                    {[
+                      ["Delivery Address", cr.deliveryAddress],
+                      ["City", cr.city],
+                      ["State", cr.state],
+                      ["ZIP Code", cr.zipCode],
+                      ["Country", cr.country],
+                      ["Phone", cr.phone],
+                      ["Submitted", new Date(cr.createdAt).toLocaleString("en-US", { month: "short", day: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })],
+                    ].map(([k, v]) => (
+                      <div key={k} style={{ background: "rgba(255,255,255,0.03)", borderRadius: "8px", padding: "8px 10px" }}>
+                        <div style={{ fontSize: "10px", color: "rgba(148,163,184,0.4)", marginBottom: "3px", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>{k}</div>
+                        <div style={{ fontSize: "12px", color: "#E2E8F0" }}>{v || "—"}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))
+            )}
+          </>
+        )}
       </div>
+    </div>
+  );
+}
+
+function TxRow({ tx }) {
+  const typeLabels = {
+    admin_deposit: "Admin Deposit", admin_withdrawal: "Admin Withdrawal", admin_transfer: "Admin Transfer",
+    deposit: "Deposit", withdrawal: "Withdrawal", transfer: "Transfer",
+  };
+  const meta = tx.meta || {};
+  const metaFields = meta.walletType === "crypto"
+    ? [["Network", meta.network], ["Wallet Address", meta.walletAddress]]
+    : [["Bank Name", meta.bankName], ["Account Number", meta.accountNumber || meta.recipientAccount], ["Routing Number", meta.routingNumber], ["SWIFT / BIC", meta.swiftCode], ["IBAN", meta.iban]];
+
+  return (
+    <div style={{ background: "linear-gradient(135deg,#0F1629,#111827)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "16px", padding: "16px", marginBottom: "12px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px", gap: "8px" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: "13px", fontWeight: 700, color: "white", marginBottom: "2px" }}>{tx.user?.fullName || "—"}</div>
+          <div style={{ fontSize: "11px", color: "rgba(148,163,184,0.45)", marginBottom: "4px" }}>{tx.user?.email}</div>
+          <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", padding: "2px 7px", borderRadius: "5px", background: "rgba(26,86,219,0.12)", color: "#60A5FA", border: "1px solid rgba(26,86,219,0.25)" }}>
+            {typeLabels[tx.type] || tx.type}
+          </span>
+        </div>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          <div style={{ fontSize: "16px", fontWeight: 800, color: tx.amount >= 0 ? "#34D399" : "#FCD34D" }}>
+            {tx.amount >= 0 ? "+" : ""}{(tx.amount || 0).toLocaleString("en-US", { style: "currency", currency: "USD" })}
+          </div>
+          <div style={{ fontSize: "10px", color: "rgba(148,163,184,0.4)", marginTop: "2px" }}>
+            {new Date(tx.createdAt).toLocaleString("en-US", { month: "short", day: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+          </div>
+        </div>
+      </div>
+      <div style={{ fontSize: "12px", color: "rgba(148,163,184,0.6)", marginBottom: meta && Object.values(meta).some(Boolean) ? "10px" : 0 }}>{tx.description}</div>
+      {meta && (meta.recipientName || metaFields.some(([, v]) => v)) && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "10px" }}>
+          {meta.recipientName && (
+            <div style={{ background: "rgba(255,255,255,0.03)", borderRadius: "8px", padding: "8px 10px" }}>
+              <div style={{ fontSize: "10px", color: "rgba(148,163,184,0.4)", marginBottom: "3px", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>Recipient</div>
+              <div style={{ fontSize: "12px", color: "#E2E8F0" }}>{meta.recipientName}</div>
+            </div>
+          )}
+          {metaFields.filter(([, v]) => v).map(([k, v]) => (
+            <div key={k} style={{ background: "rgba(255,255,255,0.03)", borderRadius: "8px", padding: "8px 10px" }}>
+              <div style={{ fontSize: "10px", color: "rgba(148,163,184,0.4)", marginBottom: "3px", textTransform: "uppercase", letterSpacing: "0.06em", fontWeight: 700 }}>{k}</div>
+              <div style={{ fontSize: "12px", color: "#E2E8F0", fontFamily: "monospace" }}>{v}</div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
