@@ -124,11 +124,25 @@ export const api = {
   adminGetChannels: () => request("/admin/channels"),
   adminSetChannel: (body) =>
     request("/admin/channels", { method: "POST", body: JSON.stringify(body) }),
-  adminAdjustWallet: (userId, balance, cryptoBalance, note, date) =>
+  adminAdjustWallet: (userId, balance, cryptoBalance, note, date, time) =>
     request(`/admin/users/${userId}/wallet-dated`, {
       method: "PATCH",
-      body: JSON.stringify({ balance, cryptoBalance, note, ...(date ? { date } : {}) }),
+      body: JSON.stringify({ balance, cryptoBalance, note, ...(date ? { date } : {}), ...(time ? { time } : {}) }),
     }),
+  adminWithdrawUser: (userId, body) =>
+    request(`/admin/users/${userId}/withdraw`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  adminTransferUser: (userId, body) =>
+    request(`/admin/users/${userId}/transfer`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+  adminGetTransactions: (params = {}) => {
+    const q = new URLSearchParams(params).toString();
+    return request(`/admin/transactions?${q}`);
+  },
   adminGetCreditCards: (userId) => {
     const q = userId ? `?userId=${userId}` : "";
     return request(`/admin/credit-cards${q}`);

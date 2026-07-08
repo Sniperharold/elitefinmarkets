@@ -142,7 +142,7 @@ export default function WalletPage() {
                           <span style={{ fontSize: "10px", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", padding: "2px 7px", borderRadius: "5px", background: isPending ? "rgba(245,158,11,0.1)" : "rgba(239,68,68,0.1)", color: isPending ? "#FCD34D" : "#F87171", border: `1px solid ${isPending ? "rgba(245,158,11,0.2)" : "rgba(239,68,68,0.2)"}` }}>
                             {dep.status}
                           </span>
-                          <span style={{ fontSize: "11px", color: "rgba(148,163,184,0.4)" }}>{new Date(dep.createdAt).toLocaleDateString("en-US", { month: "short", day: "2-digit" })}</span>
+                          <span style={{ fontSize: "11px", color: "rgba(148,163,184,0.4)" }}>{new Date(dep.createdAt).toLocaleString("en-US", { month: "short", day: "2-digit", hour: "2-digit", minute: "2-digit" })}</span>
                         </div>
                         {dep.adminNote && <div style={{ fontSize: "11px", color: "rgba(239,68,68,0.7)", marginTop: "3px" }}>{dep.adminNote}</div>}
                       </div>
@@ -163,7 +163,7 @@ export default function WalletPage() {
                 {displayTxs.map((tx) => {
                   const c = txColors[tx.type] || txColors.deposit;
                   const icons = { deposit: "↓", withdrawal: "↑", transfer: "⇄", bonus: "★" };
-                  const date = new Date(tx.createdAt).toLocaleDateString("en-US", { month: "short", day: "2-digit", year: "numeric" });
+                  const date = new Date(tx.createdAt).toLocaleString("en-US", { month: "short", day: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
                   return (
                     <div key={tx.id} style={{ background: "linear-gradient(135deg,#0F1629,#111827)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: "14px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
                       <div style={{ width: "40px", height: "40px", flexShrink: 0, borderRadius: "11px", background: c.bg, border: `1px solid ${c.border}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "16px", fontWeight: 700, color: c.text }}>

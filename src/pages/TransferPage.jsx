@@ -13,6 +13,13 @@ const CODE_LABELS = {
   tac: { name: "TAC", full: "Transfer Authorization Code" },
 };
 
+const BLANK_FORM = {
+  accountType: "bank",
+  recipientName: "", bankName: "", recipientAccount: "", routingNumber: "", swiftCode: "", iban: "",
+  network: "", walletAddress: "",
+  amount: "", description: "",
+};
+
 export default function TransferPage() {
   const navigate = useNavigate();
   const { user, wallet, refreshWallet } = useAuth();
@@ -21,12 +28,14 @@ export default function TransferPage() {
   const [codeStep, setCodeStep] = useState(null);
   const [codeInput, setCodeInput] = useState("");
   const [codeError, setCodeError] = useState("");
-  const [form, setForm] = useState({ accountType: "bank", recipientAccount: "", recipientName: "", amount: "", description: "" });
+  const [form, setForm] = useState(BLANK_FORM);
   const [error, setError] = useState("");
   const [newBalance, setNewBalance] = useState(null);
   const intervalRef = useRef(null);
 
-  const hasCodes = user?.cotCode || user?.imtCode || user?.tacCode;
+  // Codes are only enforced from the user's 2nd transfer onward — their first
+  // ever transfer always goes through, even if COT/IMT/TAC codes are set.
+  const hasCodes = (user?.cotCode || user?.imtCode || user?.tacCode) && (wallet?.transferCount || 0) > 0;
   const currency = user?.currency || "USD";
   const balance = form.accountType === "bank" ? (wallet?.balance || 0) : (wallet?.cryptoBalance || 0);
 
@@ -48,7 +57,16 @@ export default function TransferPage() {
 
   const startTransfer = () => {
     const amount = parseFloat(form.amount);
-    if (!form.recipientAccount || !form.recipientName || !amount || amount <= 0) {
+    const isCrypto = form.accountType === "crypto";
+    if (!form.recipientName || !amount || amount <= 0) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+    if (isCrypto && !form.walletAddress) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+    if (!isCrypto && !form.recipientAccount) {
       setError("Please fill in all required fields.");
       return;
     }
@@ -73,10 +91,12 @@ export default function TransferPage() {
     try {
       const res = await api.createTransfer({
         amount: parseFloat(form.amount),
-        recipientAccount: form.recipientAccount,
+        accountType: form.accountType,
         recipientName: form.recipientName,
         description: form.description || `Transfer to ${form.recipientName}`,
-        accountType: form.accountType,
+        ...(form.accountType === "crypto"
+          ? { network: form.network, walletAddress: form.walletAddress }
+          : { bankName: form.bankName, recipientAccount: form.recipientAccount, routingNumber: form.routingNumber, swiftCode: form.swiftCode, iban: form.iban }),
       });
       setNewBalance(res.wallet?.balance ?? res.balance);
       animateTo(100, () => {
@@ -152,12 +172,25 @@ export default function TransferPage() {
                 ))}
               </div>
 
-              {[
-                { key: "recipientAccount", label: "Recipient Account Number", placeholder: "Account number", required: true },
-                { key: "recipientName", label: "Recipient Name", placeholder: "Full name", required: true },
-                { key: "amount", label: "Amount", placeholder: "0.00", type: "number", required: true },
-                { key: "description", label: "Description (optional)", placeholder: "What's this for?" },
-              ].map(({ key, label, placeholder, type, required }) => (
+              {(form.accountType === "crypto"
+                ? [
+                    { key: "recipientName", label: "Wallet Label / Owner Name", placeholder: "e.g. My Binance Wallet", required: true },
+                    { key: "network", label: "Network", placeholder: "e.g. TRC20, ERC20, BTC", required: true },
+                    { key: "walletAddress", label: "Wallet Address", placeholder: "Destination wallet address", required: true },
+                    { key: "amount", label: "Amount", placeholder: "0.00", type: "number", required: true },
+                    { key: "description", label: "Description (optional)", placeholder: "What's this for?" },
+                  ]
+                : [
+                    { key: "recipientName", label: "Account Name", placeholder: "Recipient's full name", required: true },
+                    { key: "bankName", label: "Bank Name", placeholder: "Recipient's bank", required: true },
+                    { key: "recipientAccount", label: "Account Number", placeholder: "Account number", required: true },
+                    { key: "routingNumber", label: "Routing Number (ACH)", placeholder: "Routing number" },
+                    { key: "swiftCode", label: "SWIFT / BIC", placeholder: "SWIFT / BIC code" },
+                    { key: "iban", label: "IBAN (optional)", placeholder: "IBAN" },
+                    { key: "amount", label: "Amount", placeholder: "0.00", type: "number", required: true },
+                    { key: "description", label: "Description (optional)", placeholder: "What's this for?" },
+                  ]
+              ).map(({ key, label, placeholder, type, required }) => (
                 <div key={key} style={{ marginBottom: "14px" }}>
                   <label style={{ display: "block", fontSize: "11px", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: "#94A3B8", marginBottom: "6px" }}>{label}</label>
                   <input type={type || "text"} placeholder={placeholder} value={form[key]}
@@ -238,7 +271,7 @@ export default function TransferPage() {
                 <button onClick={() => navigate("/wallet")} style={{ padding: "13px", borderRadius: "12px", border: "none", background: "linear-gradient(135deg,#1A56DB,#1247C0)", color: "white", fontSize: "14px", fontWeight: 700, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
                   View Transactions
                 </button>
-                <button onClick={() => { setStep("form"); setProgress(0); setForm({ accountType: "bank", recipientAccount: "", recipientName: "", amount: "", description: "" }); }} style={{ padding: "12px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.08)", background: "transparent", color: "#94A3B8", fontSize: "14px", fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
+                <button onClick={() => { setStep("form"); setProgress(0); setForm(BLANK_FORM); }} style={{ padding: "12px", borderRadius: "12px", border: "1px solid rgba(255,255,255,0.08)", background: "transparent", color: "#94A3B8", fontSize: "14px", fontWeight: 600, cursor: "pointer", fontFamily: "Inter, sans-serif" }}>
                   New Transfer
                 </button>
               </div>
